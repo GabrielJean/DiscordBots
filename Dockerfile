@@ -1,7 +1,7 @@
 # Build dependencies only once, cache pip, minimize layers
 
 # 1. Use a specific tag for stability, and leverage pip cache
-FROM python:3.13-slim AS build
+FROM python:3.14-slim AS build
 
 RUN apt-get update && apt-get install -y git ffmpeg && rm -rf /var/lib/apt/lists/*
 WORKDIR /app
@@ -16,7 +16,7 @@ COPY discordbot /app/discordbot
 COPY discordbot/Audio /app/Audio
 
 # 2. Final image: only what's needed for runtime
-FROM python:3.13-slim
+FROM python:3.14-slim
 
 # Install only runtime dependencies
 RUN apt-get update && apt-get install -y ffmpeg && rm -rf /var/lib/apt/lists/*

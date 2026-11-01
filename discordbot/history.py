@@ -1,7 +1,7 @@
 import threading
 import json
 import os
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 
 # Optional import – we only need guild_settings for side effects in some cases.
@@ -21,7 +21,7 @@ _history_lock = threading.Lock()
 
 def log_command(user, command_name, options, guild=None):
     entry = {
-        "timestamp": datetime.utcnow().isoformat(timespec="seconds"),
+        "timestamp": datetime.now(timezone.utc).isoformat(timespec="seconds"),
         "user_id": user.id,
         "user": str(user),
         "command": command_name,

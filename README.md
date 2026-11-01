@@ -66,8 +66,8 @@ Environment tips:
 Future enhancements (easy to add later): auto-restart flags, health pings, unified structured JSON logs.
 
 ## Requirements
-- Python 3.9 or higher
-- **discord.py** ≥ 2.3
+- Python 3.11 or higher (Python 3.14 recommended)
+- **discord.py** ≥ 2.7
 - `davey` (required by current discord.py voice backend)
 - Python modules: `discord`, `discord.ext`, `requests`
 - A configuration file `config.json` in the format:

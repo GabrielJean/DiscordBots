@@ -21,7 +21,7 @@ def _set_blocked(subreddit: str) -> None:
 
 async def fetch_reddit_top(subreddit, headers, max_posts=1000):
     url = f"https://www.reddit.com/r/{subreddit}/top.json?t=year&limit=100"
-    loop = asyncio.get_event_loop()
+    loop = asyncio.get_running_loop()
     def fetch():
         posts, after = [], None
         while len(posts) < max_posts:

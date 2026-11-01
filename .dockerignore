@@ -1,1 +1,11 @@
-config.json
+.git
+.gitignore
+.vscode
+.github
+*.md
+bot.log
+command_history.json
+__pycache__
+discordbot/data
+.vault_pass.txt
+/config.json

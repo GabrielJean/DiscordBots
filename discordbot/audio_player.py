@@ -184,7 +184,7 @@ async def play_audio(
         _voice_locks[gid] = asyncio.Lock()
     queue = _voice_audio_queues[gid]
     lock = _voice_locks[gid]
-    fut = asyncio.get_event_loop().create_future()
+    fut = asyncio.get_running_loop().create_future()
     # Initially no message/view
     await queue.put((file_path, fut, voice_channel, interaction, False, duration, title, video_url, announce_message, loop, is_live, 0, None, None))
     # --- ONLY START RUNNER IF NOT RUNNING ---
@@ -215,7 +215,7 @@ async def play_ytdlp_stream(
         _voice_locks[gid] = asyncio.Lock()
     queue = _voice_audio_queues[gid]
     lock = _voice_locks[gid]
-    fut = asyncio.get_event_loop().create_future()
+    fut = asyncio.get_running_loop().create_future()
     if loop:
         stream_identifier = info_dict.get("webpage_url") or info_dict.get("original_url", info_dict.get("url"))
     else:

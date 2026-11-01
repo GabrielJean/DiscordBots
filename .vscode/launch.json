@@ -6,7 +6,7 @@
             "request": "launch",
             "program": "${file}",
             "console": "integratedTerminal",
-            "cwd": "${workspaceFolder}/discordbot",
+            "cwd": "${workspaceFolder}/discordbot"
         }
     ]
 }
