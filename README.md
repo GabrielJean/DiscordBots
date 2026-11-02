@@ -83,7 +83,7 @@ git tag musicbot/v1.0.0
 git push origin musicbot/v1.0.0
 ```
 - The respective GitHub Actions workflow will trigger.
-- The Docker image will be built and pushed to GHCR with the extracted version tag (`1.0.0`) and `:latest`.
+- The Docker image will be built and pushed to GHCR tagged strictly with the release version (e.g. `1.0.0`).
 
 ---
 
