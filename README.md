@@ -1,121 +1,141 @@
-# Jean the Discord Bot
-A Discord bot that delivers jokes and roasts, and reads content aloud using TTS. It includes an audio queue to ensure voice outputs play sequentially.
-![Jean the Bot](https://emoji.gg/assets/emoji/8170-laugh-emoji.png)
+# DiscordBots
 
-## Main Features
-- **Reddit and local jokes**
-- **Slash commands**: `/joke`, `/jokeqc`, `/roast`, `/say-vc`, `/say-tc`, `/leave`, and more
-- **Voice playback**: reads jokes and messages in voice channels (configurable voice/accent)
-- **Configurable prompts** for tailored humor
-- **Audio queue** to serialize multiple voice requests
-- **Built-in /help** to list available commands
-## Two-Bot Mode (Exact Two Profiles)
-Supports exactly TWO profiles — simple and minimal:
+A monorepo containing two dedicated, standalone Discord bots:
 
-1. `main` – everything except music-related commands (`music`, `yt`, `suno`)
-2. `musiconly` – only music-related commands plus essentials (`help`, `util`, `moderation`, `bot_mention`)
+1. **`jokebot`** — Delivers Reddit and Québécois audio jokes, roasts, compliments, and text-to-speech (TTS) voice announcements using xAI & Edge-TTS.
+2. **`musicbot`** — Handles music playback from YouTube, web radio streaming categories, and Suno AI song playback with interactive playback controls.
 
-Configure both tokens directly in `config.json` (preferred — no shell exports needed):
+---
 
-```jsonc
-{
-    // Tokens map: the loader picks the entry matching COMMAND_PROFILE
-    "tokens": {
-        "main": "XXXX_MAIN_BOT_TOKEN",
-        "musiconly": "YYYY_MUSIC_BOT_TOKEN"
-    },
-    // Optional single fallback token (unused if tokens map has the profile)
-    "token": "(optional-fallback)",
-    "xai_api_key": "XAI_API_KEY",
-    "gpt_model": "grok-4-1-fast-non-reasoning",
-    "tts_voice": "Leo",
-    "tts_provider": "edge",
-    "tts_default_instructions": "Accent parisien (français de Paris)",
-    "tts_edge_voice": "fr-CA-AntoineNeural"
-}
+## Architecture Overview
+
+```
+DiscordBots/
+├── jokebot/                       # Joke, Roast, & TTS Bot
+│   ├── Audio/                     # Local MP3 audio jokes (.mp3)
+│   ├── commands/                  # JokeBot slash commands
+│   │   ├── jokes.py               # /joke and /jokeqc
+│   │   ├── tts.py                 # /say-vc
+│   │   ├── say.py                 # /say-tc
+│   │   ├── roast.py               # /roast
+│   │   ├── compliment.py          # /compliment
+│   │   ├── bot_mention.py         # Dynamic AI mention responder
+│   │   ├── moderation.py          # /bloque, /debloque, /queue
+│   │   ├── util.py                # /leave, /history
+│   │   └── help.py                # /help
+│   ├── audio_player.py            # Voice queue & audio player
+│   ├── bot_instance.py            # Discord client initialization
+│   ├── gpt_util.py                # xAI (Grok) client & prompt helpers
+│   ├── guild_settings.py          # Server-specific voice & style settings
+│   ├── history.py                 # Command audit history
+│   ├── reddit_loader.py           # Reddit jokes fetcher
+│   ├── tts_util.py                # Voice synthesis engine
+│   ├── utils.py                   # Discord embed formatters
+│   ├── main.py                    # Entry point
+│   ├── Dockerfile                 # JokeBot Docker container
+│   ├── requirements.txt           # JokeBot dependencies
+│   └── config.json                # Encrypted configuration (Ansible Vault)
+│
+├── musicbot/                      # Music & Audio Streaming Bot
+│   ├── commands/                  # MusicBot slash commands
+│   │   ├── music.py               # /music (category rotation)
+│   │   ├── yt.py                  # /yt and /ytsearch
+│   │   ├── suno.py                # /suno
+│   │   ├── moderation.py          # /bloque, /debloque, /queue
+│   │   ├── util.py                # /leave, /history
+│   │   ├── bot_mention.py         # Music help responder
+│   │   └── help.py                # /help
+│   ├── audio_player.py            # Voice queue & yt-dlp audio stream player
+│   ├── bot_instance.py            # Discord client initialization
+│   ├── history.py                 # Command audit history
+│   ├── music_sources.json         # Music categories & streams
+│   ├── utils.py                   # Discord embed formatters
+│   ├── main.py                    # Entry point
+│   ├── Dockerfile                 # MusicBot Docker container
+│   ├── requirements.txt           # MusicBot dependencies
+│   └── config.json                # Encrypted configuration (Ansible Vault)
+│
+└── .github/workflows/
+    ├── jokebot.yml                # Builds & pushes ghcr.io/<owner>/jokebot
+    └── musicbot.yml               # Builds & pushes ghcr.io/<owner>/musicbot
 ```
 
-Run in two terminals (no env tokens required):
+---
 
+## GitHub Container Registry (GHCR) & Releases
+
+Each bot has its own Docker image and release tag lifecycle in GHCR:
+
+| Bot | GHCR Image | Release Tag Format | Example |
+| :--- | :--- | :--- | :--- |
+| **JokeBot** | `ghcr.io/<owner>/jokebot:<version>` | `jokebot/v<version>` | `git tag jokebot/v1.0.0` |
+| **MusicBot** | `ghcr.io/<owner>/musicbot:<version>` | `musicbot/v<version>` | `git tag musicbot/v1.0.0` |
+
+### Triggering a Release
+When you push a version tag for either bot:
 ```bash
-COMMAND_PROFILE=main python -m discordbot.main
-COMMAND_PROFILE=musiconly python -m discordbot.main
+# Release JokeBot v1.0.0
+git tag jokebot/v1.0.0
+git push origin jokebot/v1.0.0
+
+# Release MusicBot v1.0.0
+git tag musicbot/v1.0.0
+git push origin musicbot/v1.0.0
+```
+- The respective GitHub Actions workflow will trigger.
+- The Docker image will be built and pushed to GHCR with the extracted version tag (`1.0.0`) and `:latest`.
+
+---
+
+## Configuration
+
+Secrets are passed directly at runtime via **Environment Variables** (lowercase with hyphens):
+- `discord-token` (or `jokebot-discord-token` / `musicbot-discord-token`): Discord bot token.
+- `xai-api-key`: xAI API key for Grok (used by `jokebot`).
+
+The `config.json` files in each bot folder are unencrypted and store only non-sensitive behavioral settings (TTS voices, prompts, diversity angles, command prefixes).
+
+### JokeBot `jokebot/config.json`
+Contains Grok prompt definitions, TTS voice parameters, and intensity labels.
+
+### MusicBot `musicbot/config.json`
+Contains command prefix and bot configuration.
+
+---
+
+## Running Locally
+
+### JokeBot
+```bash
+cd jokebot
+pip install -r requirements.txt
+env jokebot-discord-token="your_token" xai-api-key="your_key" python main.py
 ```
 
-Or use the dual launcher (see below) which spawns both automatically. If you ever want a custom subset of modules you can still set `COMMAND_MODULES="mod1,mod2"`, but normally you just pick the profile.
-
-The `/help` command only shows commands loaded for that process.
-### Run both profiles with one command
-If you prefer not to open two terminals manually, use the bundled launcher:
-
+### MusicBot
 ```bash
-python -m discordbot.run_both
-# or
-python discordbot/run_both.py
+cd musicbot
+pip install -r requirements.txt
+env musicbot-discord-token="your_token" python main.py
 ```
 
-What it does:
-* Spawns two child processes (`COMMAND_PROFILE=main` and `COMMAND_PROFILE=musiconly`).
-* Prefixes each output line so you can distinguish them: `[main:OUT]`, `[musiconly:ERR]`, etc.
-* Gracefully shuts both down on Ctrl+C (SIGINT) or SIGTERM.
+---
 
-Environment tips:
-* You do not need to export `DISCORD_TOKEN`; the code resolves the active token from `config.json` based on `COMMAND_PROFILE`.
-* Optional: setting `DISCORD_TOKEN` overrides the profile token for that process.
+## Running with Docker
 
-Future enhancements (easy to add later): auto-restart flags, health pings, unified structured JSON logs.
-
-## Requirements
-- Python 3.11 or higher (Python 3.14 recommended)
-- **discord.py** ≥ 2.7
-- `davey` (required by current discord.py voice backend)
-- Python modules: `discord`, `discord.ext`, `requests`
-- A configuration file `config.json` in the format:
-    ```json
-        {
-            "token": "YOUR_DISCORD_BOT_TOKEN_HERE",
-            "xai_api_key": "XAI_API_KEY",
-            "gpt_model": "grok-4-1-fast-non-reasoning",
-            "tts_voice": "Leo",
-            "tts_provider": "edge",
-            "tts_default_instructions": "Accent parisien (français de Paris)",
-            "tts_edge_voice": "fr-CA-AntoineNeural"
-        }
-    ```
-- A folder `./Audio` with MP3 files (for Québécois jokes and special sound effects)
-## Installation
-1. **Install dependencies**
-    ```
-    pip install -r requirements.txt
-    ```
-2. **Create `config.json`** (see above)
-3. **Add MP3 assets** to `./Audio`
-4. **Start the bot**
-    ```
-    python tonbot.py
-    ```
-    Or with module (recommended):
-    ```bash
-    DISCORD_TOKEN=xxxxx python -m discordbot.main
-    ```
-## Main Commands
-- `/help` – Shows all bot commands
-- `/joke` – Plays a Reddit joke in voice
-- `/jokeqc` – Plays a local joke (mp3)
-- `/leave` – Forces the bot to leave the voice channel
-- `/say-vc <text>` – Reads out text (configurable voice/accent)
-- `/say-tc <text>` – Writes text in the text channel
-- `/roast @member [intensity] [details]` – Fun public roast (level 1 mild to 5 salty)
-## How the Queue Works
-When multiple members send audio commands (mp3/TTS reading), each request is placed in a queue and played **in order**.
-This ensures each request is read without overlap or interruption.
-## Notes
-- **Logs**: bot activity is recorded in `bot.log`
-- **Multi-server** compatible
-- **Configurable voice/accent** via `/say-vc`
-## Examples
+### JokeBot
 ```bash
-/joke
-/jokeqc
-/roast @Martin 5 "Always late to games, loves pizzas"
+docker build -t jokebot jokebot/
+docker run -d --name jokebot \
+  -e discord-token="your_token" \
+  -e xai-api-key="your_key" \
+  jokebot
+```
+
+### MusicBot
+```bash
+docker build -t musicbot musicbot/
+docker run -d --name musicbot \
+  -e discord-token="your_token" \
+  musicbot
 ```

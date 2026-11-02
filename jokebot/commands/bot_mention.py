@@ -10,8 +10,10 @@ import time
 from collections import defaultdict, deque
 try:
     from ..gpt_util import run_gpt  # type: ignore
+    from ..bot_instance import get_config  # type: ignore
 except ImportError:  # script fallback
     from gpt_util import run_gpt  # type: ignore
+    from bot_instance import get_config  # type: ignore
 try:
     from ..tts_util import run_tts  # type: ignore
     from ..audio_player import play_audio  # type: ignore
@@ -21,17 +23,16 @@ except ImportError:  # script fallback
     from audio_player import play_audio  # type: ignore
     from guild_settings import get_tts_instructions  # type: ignore
 
-CONFIG_PATH = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'config.json'))
-with open(CONFIG_PATH, "r", encoding="utf-8") as f:
-    config = json.load(f)
+def _load_prompts():
+    config = get_config()
+    prompts = config.get("prompts", {})
+    bot_system_prompt = prompts.get("bot_system_prompt", "Tu es Jean, un bot Discord sarcastique et humoristique.")
+    short_reply_suffix = prompts.get("short_reply_suffix", "")
+    ttl = int(config.get("mention_history_ttl_seconds", 300))
+    return bot_system_prompt, short_reply_suffix, ttl
 
-# Load prompts from config (no fallbacks)
-prompts = config["prompts"]
-bot_system_prompt = prompts["bot_system_prompt"]
-short_reply_suffix = prompts["short_reply_suffix"]
-
+bot_system_prompt, short_reply_suffix, HISTORY_TTL_SECONDS = _load_prompts()
 MAX_HISTORY = 15
-HISTORY_TTL_SECONDS = int(config["mention_history_ttl_seconds"])
 
 
 class _MessageInteraction:

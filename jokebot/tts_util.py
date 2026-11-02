@@ -39,10 +39,18 @@ def _normalize_voice(voice: Optional[str]) -> str:
 
 
 async def _run_voice_agent_tts(text: str, instructions: str, voice: str, sample_rate: int) -> tuple[bytes, str]:
+    import os
     cfg = get_config()
-    api_key = cfg.get("xai_api_key")
+    api_key = (
+        os.getenv("xai-api-key")
+        or os.getenv("XAI-API-KEY")
+        or os.getenv("XAI_API_KEY")
+        or os.getenv("xai_api_key")
+        or cfg.get("xai-api-key")
+        or cfg.get("xai_api_key")
+    )
     if not api_key:
-        raise RuntimeError("Missing xAI API key (xai_api_key).")
+        raise RuntimeError("Missing xAI API key (xai-api-key).")
 
     base_url = "wss://api.x.ai/v1/realtime"
     audio_chunks: list[bytes] = []

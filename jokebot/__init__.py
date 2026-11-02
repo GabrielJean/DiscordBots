@@ -1,0 +1,2 @@
+"""JokeBot package."""
+

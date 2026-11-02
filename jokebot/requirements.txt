@@ -3,7 +3,7 @@ git+https://github.com/Rapptz/discord.py.git
 davey>=0.1.7
 PyNaCl>=1.6.0
 requests>=2.34.0
-yt_dlp>=2026.10.0
 xai-sdk>=1.21.0
 websockets>=17.0
 edge-tts>=7.3.0
+

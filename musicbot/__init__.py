@@ -1,0 +1,2 @@
+"""MusicBot package."""
+

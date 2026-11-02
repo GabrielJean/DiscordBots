@@ -1,0 +1,145 @@
+import discord
+from discord.ext import commands
+import json
+import logging
+import os
+import sys
+from pathlib import Path
+
+BASE_DIR = Path(__file__).resolve().parent
+
+def _load_local_secrets():
+    """Optional loader for local secret.txt / .env files during development."""
+    for candidate in [BASE_DIR / "secret.txt", BASE_DIR.parent / "secret.txt", BASE_DIR / ".env", BASE_DIR.parent / ".env"]:
+        if candidate.exists():
+            try:
+                for line in candidate.read_text(encoding="utf-8").splitlines():
+                    line = line.strip()
+                    if line and not line.startswith("#") and "=" in line:
+                        k, v = line.split("=", 1)
+                        k, v = k.strip(), v.strip().strip('"').strip("'")
+                        if k and v:
+                            os.environ.setdefault(k, v)
+                            os.environ.setdefault(k.replace("_", "-"), v)
+                            os.environ.setdefault(k.replace("-", "_"), v)
+            except Exception:
+                pass
+
+_load_local_secrets()
+
+def get_env_var(*names: str) -> str:
+    """Check os.environ for names, prioritizing lowercase-hyphenated format."""
+    for name in names:
+        variants = [
+            name.lower().replace("_", "-"),
+            name.lower(),
+            name.upper().replace("_", "-"),
+            name.upper().replace("-", "_"),
+            name,
+        ]
+        for v in variants:
+            val = os.getenv(v)
+            if val:
+                return val
+    return ""
+
+config_path = BASE_DIR / "config.json"
+config = {}
+if config_path.exists():
+    try:
+        config_raw = config_path.read_text(encoding="utf-8")
+        if config_raw.lstrip().startswith("$ANSIBLE_VAULT"):
+            logging.warning("Config file appears to be Ansible Vault encrypted. Using environment overrides if present.")
+        else:
+            config = json.loads(config_raw)
+    except Exception as exc:
+        logging.warning("Failed to parse config file (%s): %s", config_path, exc)
+
+# Token resolution supporting lowercase-hyphenated format (e.g. musicbot-discord-token, discord-token):
+tokens_map = config.get("tokens", {}) if isinstance(config.get("tokens"), dict) else {}
+selected_token = (
+    get_env_var("musicbot-discord-token", "discord-token")
+    or tokens_map.get("musicbot")
+    or tokens_map.get("musiconly")
+    or config.get("token")
+)
+config["token"] = selected_token
+
+data_dir = BASE_DIR / "data"
+data_dir.mkdir(parents=True, exist_ok=True)
+log_path = data_dir / "bot_musicbot.log"
+
+log_format = "%(asctime)s [%(levelname)s] [musicbot] %(message)s"
+
+class MaxLevelFilter(logging.Filter):
+    def __init__(self, max_level: int):
+        super().__init__()
+        self.max_level = max_level
+
+    def filter(self, record: logging.LogRecord) -> bool:
+        return record.levelno <= self.max_level
+
+stdout_handler = logging.StreamHandler(sys.stdout)
+stdout_handler.setLevel(logging.DEBUG)
+stdout_handler.addFilter(MaxLevelFilter(logging.INFO))
+stdout_handler.setFormatter(logging.Formatter(log_format))
+
+stderr_handler = logging.StreamHandler(sys.stderr)
+stderr_handler.setLevel(logging.WARNING)
+stderr_handler.setFormatter(logging.Formatter(log_format))
+
+file_handler = logging.FileHandler(str(log_path))
+file_handler.setLevel(logging.DEBUG)
+file_handler.setFormatter(logging.Formatter(log_format))
+
+logging.basicConfig(
+    level=logging.INFO,
+    handlers=[file_handler, stdout_handler, stderr_handler]
+)
+
+discord_log_level = os.getenv("DISCORD_LOG_LEVEL", "WARNING").upper()
+logging.getLogger("discord").setLevel(discord_log_level)
+logging.getLogger("discord.client").setLevel(discord_log_level)
+logging.getLogger("discord.gateway").setLevel(discord_log_level)
+
+intents = discord.Intents.default()
+intents.message_content = True
+intents.guilds = True
+intents.messages = True
+intents.voice_states = True
+
+bot = commands.Bot(command_prefix="!", intents=intents)
+
+def get_config():
+    return config
+
+first_ready = True
+
+@bot.event
+async def on_ready():
+    global first_ready
+    logging.info(f"Bot logged in as {bot.user}!")
+    await bot.change_presence(activity=discord.Game(name="Loading..."))
+
+    try:
+        if first_ready:
+            try:
+                from .commands import setup_all_commands
+            except ImportError:
+                from commands import setup_all_commands
+            logging.info("Setting up musicbot command modules...")
+            loaded = await setup_all_commands(bot)
+            if not loaded:
+                logging.error("No command modules loaded! Check import errors above.")
+            logging.info("Syncing slash commands...")
+            cmds = await bot.tree.sync()
+            logging.info(f"Slash commands synced: {len(cmds)} cmds (expected ~{len(loaded)})")
+            first_ready = False
+
+        status_text = "Musique: /help"
+        await bot.change_presence(activity=discord.Game(name=status_text))
+        logging.info("Bot status set to '%s'.", status_text)
+    except Exception as e:
+        logging.exception("Exception in on_ready")
+        await bot.change_presence(activity=discord.Game(name="Erreur au démarrage"))
+

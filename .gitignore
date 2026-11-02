@@ -1,4 +1,11 @@
-bot.log
+bot*.log
 command_history.json
 __pycache__/
-discordbot/data
+*/__pycache__/
+*/**/__pycache__/
+jokebot/data/
+musicbot/data/
+.vault_pass.txt
+secret.txt
+*.secret
+*.env

@@ -19,6 +19,8 @@ YTDLP_CLIENT_ORDER = ["android", "ios", "web"]
 
 # Path to the JSON file defining categories and URLs
 MUSIC_SOURCES_PATH = (Path(__file__).resolve().parent.parent / "music_sources.json")
+if not MUSIC_SOURCES_PATH.exists() and Path("/app/music_sources.json").exists():
+    MUSIC_SOURCES_PATH = Path("/app/music_sources.json")
 
 
 def load_music_sources():

@@ -18,7 +18,9 @@ except ImportError:  # fallback when run as script from project root
     from reddit_loader import get_reddit_jokes  # type: ignore
 
 BASE_DIR = Path(__file__).resolve().parent.parent
-AUDIO_DIR = BASE_DIR / "Audio"
+AUDIO_DIR = Path(os.getenv("AUDIO_DIR", "")) if os.getenv("AUDIO_DIR") else (BASE_DIR / "Audio")
+if not AUDIO_DIR.exists() and Path("/app/Audio").exists():
+    AUDIO_DIR = Path("/app/Audio")
 audio_files = [f for f in os.listdir(AUDIO_DIR) if f.endswith(".mp3")] if AUDIO_DIR.exists() else []
 VOICE_BACKEND_MISSING = "davey library needed in order to use voice"
 
