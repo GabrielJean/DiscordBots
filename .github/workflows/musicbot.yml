@@ -50,5 +50,15 @@ jobs:
           file: ./musicbot/Dockerfile
           push: true
           tags: ${{ steps.version.outputs.image }}
+          provenance: false
           cache-from: type=gha
           cache-to: type=gha,mode=max
+
+      - name: Cleanup untagged images
+        uses: actions/delete-package-versions@v5
+        continue-on-error: true
+        with:
+          package-name: 'musicbot'
+          package-type: 'container'
+          delete-only-untagged-versions: 'true'
+          min-versions-to-keep: 0
