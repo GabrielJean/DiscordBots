@@ -2,8 +2,13 @@ import discord
 from discord import app_commands
 try:
     from ..history import log_command
+    from .. import __version__
 except ImportError:  # script fallback
     from history import log_command  # type: ignore
+    try:
+        from __init__ import __version__  # type: ignore
+    except ImportError:
+        __version__ = "1.0.0"
 from discord.ext import commands
 
 # Map command names to a short help description; dynamic embed will only show
@@ -49,5 +54,5 @@ async def setup(bot):
                 desc = desc[:1000] + "…"
             embed.add_field(name=f"/{name}", value=desc, inline=False)
 
-        embed.set_footer(text="JokeBot v1.0.0")
+        embed.set_footer(text=f"JokeBot v{__version__}")
         await interaction.response.send_message(embed=embed, ephemeral=True)

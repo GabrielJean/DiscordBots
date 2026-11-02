@@ -62,28 +62,29 @@ DiscordBots/
 
 ---
 
-## GitHub Container Registry (GHCR) & Releases
+## GitHub Container Registry (GHCR) & File-Based Releases
 
-Each bot has its own Docker image and release tag lifecycle in GHCR:
+Each bot is versioned via a simple `VERSION` file:
+- `jokebot/VERSION`
+- `musicbot/VERSION`
 
-| Bot | GHCR Image | Release Tag Format | Example |
+No Git tags or GitHub releases are needed!
+
+| Bot | GHCR Image | Version File | Example |
 | :--- | :--- | :--- | :--- |
-| **JokeBot** | `ghcr.io/<owner>/jokebot:<version>` | `jokebot/v<version>` | `git tag jokebot/v1.0.0` |
-| **MusicBot** | `ghcr.io/<owner>/musicbot:<version>` | `musicbot/v<version>` | `git tag musicbot/v1.0.0` |
+| **JokeBot** | `ghcr.io/<owner>/jokebot:<version>` | `jokebot/VERSION` | `1.0.0` |
+| **MusicBot** | `ghcr.io/<owner>/musicbot:<version>` | `musicbot/VERSION` | `1.0.0` |
 
-### Triggering a Release
-When you push a version tag for either bot:
-```bash
-# Release JokeBot v1.0.0
-git tag jokebot/v1.0.0
-git push origin jokebot/v1.0.0
-
-# Release MusicBot v1.0.0
-git tag musicbot/v1.0.0
-git push origin musicbot/v1.0.0
-```
-- The respective GitHub Actions workflow will trigger.
-- The Docker image will be built and pushed to GHCR tagged strictly with the release version (e.g. `1.0.0`).
+### How to Release an Update
+Whenever you update code or bump the version:
+1. Edit `jokebot/VERSION` (or `musicbot/VERSION`) with the new version string (e.g. `1.0.1`).
+2. Commit and push to `main`:
+   ```bash
+   git commit -am "Bump JokeBot to 1.0.1"
+   git push origin main
+   ```
+3. GitHub Actions automatically reads the `VERSION` file and publishes **strictly one image** to GHCR:
+   `ghcr.io/<owner>/jokebot:1.0.1` (or `musicbot:1.0.1`).
 
 ---
 
