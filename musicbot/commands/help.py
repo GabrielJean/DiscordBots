@@ -49,5 +49,5 @@ async def setup(bot):
                 desc = desc[:1000] + "…"
             embed.add_field(name=f"/{name}", value=desc, inline=False)
 
-        embed.set_footer(text="Liste filtrée selon les modules chargés pour CE bot.")
+        embed.set_footer(text="MusicBot v1.0.0")
         await interaction.response.send_message(embed=embed, ephemeral=True)
