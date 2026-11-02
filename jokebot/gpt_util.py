@@ -30,16 +30,14 @@ def _get_client():
     if _client is None:
         import os
         cfg = get_config()
+        normalized_env = {k.lower().replace("_", "").replace("-", ""): v for k, v in os.environ.items()}
         api_key = (
-            os.getenv("xai-api-key")
-            or os.getenv("XAI-API-KEY")
-            or os.getenv("XAI_API_KEY")
-            or os.getenv("xai_api_key")
-            or cfg.get("xai-api-key")
+            normalized_env.get("xaiapikey")
             or cfg.get("xai_api_key")
+            or cfg.get("xai-api-key")
         )
         if not api_key:
-            raise RuntimeError("Missing xAI API key. Set xai-api-key environment variable.")
+            raise RuntimeError("Missing xAI API key. Set XAI_API_KEY / xai-api-key environment variable.")
         _client = Client(
             api_key=api_key,
             timeout=3600,

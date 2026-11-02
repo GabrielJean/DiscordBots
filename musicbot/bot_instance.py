@@ -28,19 +28,17 @@ def _load_local_secrets():
 _load_local_secrets()
 
 def get_env_var(*names: str) -> str:
-    """Check os.environ for names, prioritizing lowercase-hyphenated format."""
+    """Case-insensitive, separator-agnostic environment variable getter.
+    Matches MUSICBOT_DISCORD_TOKEN, musicbot-discord-token, etc. interchangeably.
+    """
+    normalized_env = {
+        k.lower().replace("_", "").replace("-", ""): v
+        for k, v in os.environ.items()
+    }
     for name in names:
-        variants = [
-            name.lower().replace("_", "-"),
-            name.lower(),
-            name.upper().replace("_", "-"),
-            name.upper().replace("-", "_"),
-            name,
-        ]
-        for v in variants:
-            val = os.getenv(v)
-            if val:
-                return val
+        norm = name.lower().replace("_", "").replace("-", "")
+        if norm in normalized_env and normalized_env[norm]:
+            return normalized_env[norm]
     return ""
 
 config_path = BASE_DIR / "config.json"
@@ -55,10 +53,11 @@ if config_path.exists():
     except Exception as exc:
         logging.warning("Failed to parse config file (%s): %s", config_path, exc)
 
-# Token resolution supporting lowercase-hyphenated format (e.g. musicbot-discord-token, discord-token):
+# Token resolution supporting all naming conventions (case-insensitive & separator-agnostic):
+# Matches MUSICBOT_DISCORD_TOKEN, musicbot-discord-token, DISCORD_TOKEN, discord-token, etc.
 tokens_map = config.get("tokens", {}) if isinstance(config.get("tokens"), dict) else {}
 selected_token = (
-    get_env_var("musicbot-discord-token", "discord-token")
+    get_env_var("musicbot_discord_token", "discord_token")
     or tokens_map.get("musicbot")
     or tokens_map.get("musiconly")
     or config.get("token")

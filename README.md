@@ -90,9 +90,14 @@ Whenever you update code or bump the version:
 
 ## Configuration
 
-Secrets are passed directly at runtime via **Environment Variables** (lowercase with hyphens):
-- `discord-token` (or `jokebot-discord-token` / `musicbot-discord-token`): Discord bot token.
-- `xai-api-key`: xAI API key for Grok (used by `jokebot`).
+Secrets are injected at runtime via **Environment Variables**.
+The resolution is completely **case-insensitive** and **separator-agnostic** (hyphens `-` and underscores `_` are interchangeable):
+
+| Secret | Supported Variable Names (any casing/separator) | Example in Kubernetes / ExternalSecrets | Example in Azure Key Vault |
+| :--- | :--- | :--- | :--- |
+| **JokeBot Token** | `JOKEBOT_DISCORD_TOKEN`, `jokebot-discord-token`, `DISCORD_TOKEN`, `discord-token` | `JOKEBOT_DISCORD_TOKEN` | `jokebot-discord-token` |
+| **MusicBot Token** | `MUSICBOT_DISCORD_TOKEN`, `musicbot-discord-token`, `DISCORD_TOKEN`, `discord-token` | `MUSICBOT_DISCORD_TOKEN` | `musicbot-discord-token` |
+| **xAI API Key** | `XAI_API_KEY`, `xai-api-key` | `XAI_API_KEY` | `xai-api-key` |
 
 The `config.json` files in each bot folder are unencrypted and store only non-sensitive behavioral settings (TTS voices, prompts, diversity angles, command prefixes).
 
